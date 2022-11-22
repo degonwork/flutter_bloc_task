@@ -1,30 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:task_bloc/widgets/my_drawer.dart';
+
 import '../blocs/bloc_exports.dart';
-import '../models/task.dart';
-import 'add_task_screen.dart';
+import '../widgets/my_drawer.dart';
 import '../widgets/task_list.dart';
 
-class TaskScreen extends StatelessWidget {
-  const TaskScreen({super.key});
-
-  static const String name = '/tasks_screen';
+class RecycleBin extends StatelessWidget {
+  const RecycleBin({super.key});
+  static const String name = '/recycle_bin_screen';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Task App"),
+        title: const Text("Recycle Bin"),
         actions: [
           IconButton(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => const SingleChildScrollView(
-                  child: AddTaskScreen(),
-                ),
-              );
-            },
+            onPressed: () {},
             icon: const Icon(Icons.add),
           )
         ],
@@ -32,22 +23,16 @@ class TaskScreen extends StatelessWidget {
       drawer: const MyDrawer(),
       body: BlocBuilder<TasksBloc, TasksState>(
         builder: (context, state) {
-          if (state is TasksLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
           if (state is TasksChanged) {
-            final List<Task> tasksList = state.allTasks;
             return Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Center(
                     child: Chip(
-                      label: Text("${tasksList.length} Tasks"),
+                      label: Text("${state.removedTasks.length} Tasks"),
                     ),
                   ),
-                  TaskList(tasksList: tasksList),
+                  TaskList(tasksList: state.removedTasks),
                 ]);
           } else {
             return const Center(

@@ -10,11 +10,12 @@ class Task extends Equatable {
     isDeleted = isDeleted ?? false;
   }
 
-  Task copyWith({String? title, bool? isDone, bool? isDeleted}) {
+  Task copyWith({String? title, bool? isDone, bool? isDeleted, String? id}) {
     return Task(
-        title: title ?? this.title,
-        isDone: isDone ?? this.isDone,
-        isDeleted: isDeleted ?? this.isDeleted);
+      title: title ?? this.title,
+      isDone: isDone ?? this.isDone,
+      isDeleted: isDeleted ?? this.isDeleted,
+    );
   }
 
   factory Task.fromJson(Map<String, dynamic> map) {
@@ -25,7 +26,7 @@ class Task extends Equatable {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toJson() => {
         "title": title,
         "isDone": isDone,
         "isDeleted": isDeleted,

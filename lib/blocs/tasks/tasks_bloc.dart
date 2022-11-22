@@ -1,14 +1,16 @@
 import 'dart:async';
-
 import 'package:equatable/equatable.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:task_bloc/services/storage.dart';
 import '../../models/task.dart';
+import '../bloc_exports.dart';
 part 'tasks_event.dart';
 part 'tasks_state.dart';
 
 class TasksBloc extends Bloc<TasksEvent, TasksState> {
-  TasksBloc() : super(const TasksLoading()) {
+  final Storage _storage;
+  TasksBloc({required Storage storage})
+      : _storage = storage,
+        super(const TasksLoading()) {
     on<StartedTask>(_onStartedTask);
     on<AddTask>(_onAddTask);
     on<UpdateTask>(_onUpdateTask);
@@ -19,47 +21,61 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       StartedTask event, Emitter<TasksState> emit) async {
     emit(const TasksLoading());
     try {
-      await Future<void>.delayed(const Duration(seconds: 1));
+      List<Task> allTasks = await _storage.getStorageCreated();
+      List<Task> removedTasks = await _storage.getStorageDeleted();
       emit(
-        const TasksAdded(),
+        TasksChanged(allTasks: allTasks, removedTasks: removedTasks),
       );
-    } catch (_) {}
-  }
-
-  Future<void> _onAddTask(AddTask event, Emitter<TasksState> emit) async {
-    if (state is TasksAdded) {
-      try {
-        emit(TasksAdded(
-            allTasks: List.from((state as TasksAdded).allTasks)
-              ..add(event.task)));
-      } catch (e) {}
+    } catch (e) {
+      emit(TasksError(e.toString()));
     }
   }
 
-  void _onUpdateTask(UpdateTask event, Emitter<TasksState> emit) {
-    if (state is TasksAdded) {
+  Future<void> _onAddTask(AddTask event, Emitter<TasksState> emit) async {
+    if (state is TasksChanged) {
       try {
-        final int index = (state as TasksAdded).allTasks.indexOf(event.task);
-        List<Task> allTasks = List.from((state as TasksAdded).allTasks)
+        emit(TasksChanged(
+            allTasks: List.from((state as TasksChanged).allTasks)
+              ..add(event.task)));
+        await _storage.setStorageCreated((state as TasksChanged).allTasks);
+      } catch (e) {
+        emit(TasksError(e.toString()));
+      }
+    }
+  }
+
+  Future<void> _onUpdateTask(UpdateTask event, Emitter<TasksState> emit) async {
+    if (state is TasksChanged) {
+      try {
+        final int index = (state as TasksChanged).allTasks.indexOf(event.task);
+        List<Task> allTasks = List.from((state as TasksChanged).allTasks)
           ..remove(event.task);
         event.task.isDone == false
             ? allTasks.insert(index, event.task.copyWith(isDone: true))
             : allTasks.insert(index, event.task.copyWith(isDone: false));
-        emit(TasksAdded(allTasks: allTasks));
-      } catch (e) {}
+        await _storage.setStorageCreated((state as TasksChanged).allTasks);
+        emit(TasksChanged(allTasks: allTasks));
+      } catch (e) {
+        emit(TasksError(e.toString()));
+      }
     }
   }
 
-  void _onDeleteTask(DeleteTask event, Emitter<TasksState> emit) {
-    if (state is TasksAdded) {
+  Future<void> _onDeleteTask(DeleteTask event, Emitter<TasksState> emit) async {
+    if (state is TasksChanged) {
       try {
         emit(
-          TasksAdded(
-            allTasks: List.from((state as TasksAdded).allTasks)
-              ..remove(event.task),
-          ),
+          TasksChanged(
+              allTasks: List.from((state as TasksChanged).allTasks)
+                ..remove(event.task),
+              removedTasks: List.from((state as TasksChanged).removedTasks)
+                ..add(event.task.copyWith(isDeleted: true))),
         );
-      } catch (e) {}
+        await _storage.setStorageCreated((state as TasksChanged).allTasks);
+        await _storage.setStorageDeleted((state as TasksChanged).removedTasks);
+      } catch (e) {
+        emit(TasksError(e.toString()));
+      }
     }
   }
 }
