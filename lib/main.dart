@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_bloc/routes/app_routes.dart';
-import 'package:task_bloc/screen.dart/task_screen.dart';
+import 'package:task_bloc/screens/task_screen.dart';
 import 'package:task_bloc/services/storage.dart';
 import 'blocs/bloc_exports.dart';
 
